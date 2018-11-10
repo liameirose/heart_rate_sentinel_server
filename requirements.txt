@@ -1,0 +1,6 @@
+flask
+ipython
+pytest
+gunicorn
+pymodm
+requests
