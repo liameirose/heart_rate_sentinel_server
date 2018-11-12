@@ -1,40 +1,168 @@
 from pymodm import connect
 from pymodm import MongoModel, fields
 from flask import Flask, jsonify, request
-
-
-# connect("mongodb://liameirose:sharoniscool8@ds037283.mlab.com:37283/bme590")
-#
-#
-# class User(MongoModel):
-#     email = fields.EmailField(primary_key=True)
-#     patient_id = fields.CharField()
-#     user_age = fields.CharField()
-#     heart_rate = fields.CharField()
+from datetime import datetime
+import numpy as np
 
 
 app = Flask(__name__)
+
+connect("mongodb://<liameirose>:<sharoniscool8>@ds037283.mlab.com:37283/bme590")
+
+
+class User(MongoModel):
+    patient_id = fields.IntegerField(primary_key=True)
+    user_age = fields.IntegerField()
+    email = fields.EmailField()
+    heart_rate = fields.ListField(field=fields.IntegerField())
+    hr_times = fields.ListField(field=fields.DateTimeField())
+
+
+def append_hr(patient_id, hr, time):
+    user = User.objects.raw({"_id": patient_id}).first()
+    user.heart_rate.append(hr)
+    user.hr_times.append(time)
+    user.save()
+
+
+def new_user(patient_id, email, user_age, hr, time):
+    u = User(patient_id, email, user_age, [], [])
+    u.heart_rate.append(hr)
+    u.hr_times.append(time)
+    u.save()
+
+
+def give_hr(patient_id):
+    u = User.objects.raw({"_id": patient_id}).first()
+    return u.heart_rate
+
+
+def give_age(patient_id):
+    u = User.objects.raw({"_id": patient_id}).first()
+    return u.user_age
+
+
+def give_time(patient_id):
+    u = User.objects.raw({"_id": patient_id}).first()
+    return u.hr_times
+
+
+def give_avg(hr_list):
+    avg = np.mean(hr_list)
+    return avg
+
+
+def avg_interval(patient_id, interval):
+    try:
+        time_from = datetime.strptime(interval, "%Y-%m-%d %H:%M:%S.%f")
+    except ValueError:
+        return "Time interval is not in the right format. "
+    hr = give_hr(patient_id)
+    times = give_time(patient_id)
+
+    hr_from = []
+
+    for n, t in enumerate(times):
+        if t > time_from:
+            hr_from.append(hr[n])
+    avg_from = give_avg(hr_from)
+    return avg_from
+
+
+def tachy(user_age, heart_rate):
+    if user_age >= 1 and user_age <= 2 and heart_rate > 151:
+        return "Tachycardia detected."
+    elif user_age >= 3 and user_age <= 4 and heart_rate > 137:
+        return "Tachycardia  detected."
+    elif user_age >= 5 and user_age <= 7 and heart_rate > 133:
+        return "Tachycardia detected."
+    elif user_age >= 8 and user_age <= 11 and heart_rate > 130:
+        return "Tachycardia  detected."
+    elif user_age >= 12 and user_age <= 15 and heart_rate > 119:
+        return "Tachycardia  detected."
+    elif user_age >= 15 and heart_rate > 130:
+        return "Tachycardia  detected."
+    else:
+        return 'No tachycardia detected.'
+
+
+@app.route("/test", methods=["GET"])
+def test():
+    return "Hello, this is a test"
 
 
 @app.route("/api/new_patient", methods=["POST"])
 def new_patient():
     r = request.get_json()
-    patient = {
-        "patient_id": r[0, 1],
-        "attending email": r[1, 1],
-        "user age": r[2, 1]
-    }
-    return jsonify(patient)
+    pat_id = r["patient_id"]
+    email = r["attending_email"]
+    age = r["user_age"]
+    hr = r["heart_rate"]
+    time = datetime.now()
+    new_user(pat_id, email, age, hr, time)
+    print("New patient, responses recorded")
+    return jsonify(pat_id, email, age)
 
 
 @app.route("/api/heart_rate", methods=["POST"])
 def heart_rate():
     r = request.get_json()
-    patient_hr = {
-        "patient_id": r[0, 1],
-        "heart_rate": r[1, 1],
-    }
-    return jsonify(patient_hr)
+    pat_id = r["patient_id"]
+    email = r["attending_email"]
+    age = r["user_age"]
+    hr = r["heart_rate"]
+    time = datetime.now()
+    try:
+        append_hr(pat_id, hr, time)
+        print("Patient exists, responses recorded")
+        return jsonify(pat_id, hr)
+    except:
+        new_user(pat_id, email, age, hr, time)
+        print("Patient did not exist, a new patient was created")
+        return jsonify(pat_id, hr)
 
-  
+
+@app.route("/api/status/<patient_id>", methods=["GET"])
+def status(patient_id):
+    age = give_age(patient_id)
+    hr = give_hr(patient_id)[-1]
+    time = give_time(patient_id)[-1]
+    try:
+        return jsonify(tachy(age, hr), time)
+    except:
+        return "Patient information does not exist"
+
+
+@app.route("/api/heart_rate/<patient_id>", methods=["GET"])
+def all_hr(patient_id):
+    hr = give_hr(patient_id)
+    try:
+        return jsonify(hr)
+    except:
+        return "Patient information does not exist"
+
+
+@app.route("/api/heart_rate/average/<patient_id>", methods=["GET"])
+def find_avg(patient_id):
+    hr = give_hr(patient_id)
+    try:
+        jsonify(give_avg(hr))
+    except:
+        return "Patient information does not exist"
+
+
+@app.route("/api/heart_rate", methods=["POST"])
+def average_over_interval():
+    r = request.get_json()
+    pat_id = r["patient_id"]
+    interval = r["interval"]
+    try:
+        jsonify(avg_interval(pat_id, interval))
+    except:
+        return "Patient information does not exist."
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1")
+
 
