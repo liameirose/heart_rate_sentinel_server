@@ -5,9 +5,8 @@ from datetime import datetime
 import numpy as np
 
 
+connect("mongodb://liameirose:sharoniscool8@ds037283.mlab.com:37283/bme590")
 app = Flask(__name__)
-
-connect("mongodb://<liameirose>:<sharoniscool8>@ds037283.mlab.com:37283/bme590")
 
 
 class User(MongoModel):
@@ -26,7 +25,7 @@ def append_hr(patient_id, hr, time):
 
 
 def new_user(patient_id, email, user_age, hr, time):
-    u = User(patient_id, email, user_age, [], [])
+    u = User(patient_id, user_age, email, [], [])
     u.heart_rate.append(hr)
     u.hr_times.append(time)
     u.save()
@@ -56,7 +55,7 @@ def avg_interval(patient_id, interval):
     try:
         time_from = datetime.strptime(interval, "%Y-%m-%d %H:%M:%S.%f")
     except ValueError:
-        return "Time interval is not in the right format. "
+        return "Time interval is not in the right format. Please try again."
     hr = give_hr(patient_id)
     times = give_time(patient_id)
 
@@ -124,6 +123,7 @@ def heart_rate():
 
 @app.route("/api/status/<patient_id>", methods=["GET"])
 def status(patient_id):
+    patient_id = int(patient_id)
     age = give_age(patient_id)
     hr = give_hr(patient_id)[-1]
     time = give_time(patient_id)[-1]
@@ -135,6 +135,7 @@ def status(patient_id):
 
 @app.route("/api/heart_rate/<patient_id>", methods=["GET"])
 def all_hr(patient_id):
+    patient_id = int(patient_id)
     hr = give_hr(patient_id)
     try:
         return jsonify(hr)
@@ -144,25 +145,28 @@ def all_hr(patient_id):
 
 @app.route("/api/heart_rate/average/<patient_id>", methods=["GET"])
 def find_avg(patient_id):
+    patient_id = int(patient_id)
     hr = give_hr(patient_id)
     try:
-        jsonify(give_avg(hr))
+        return jsonify(give_avg(hr))
     except:
         return "Patient information does not exist"
 
 
-@app.route("/api/heart_rate", methods=["POST"])
+@app.route("/api/heart_rate/interval_average", methods=["POST"])
 def average_over_interval():
     r = request.get_json()
     pat_id = r["patient_id"]
     interval = r["interval"]
     try:
-        jsonify(avg_interval(pat_id, interval))
+        result = avg_interval(pat_id, interval)
+        print(result)
+        return jsonify(result)
     except:
         return "Patient information does not exist."
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1")
+    app.run(host="127.0.0.1", port=5001)
 
 
