@@ -17,6 +17,44 @@ class User(MongoModel):
     hr_times = fields.ListField(field=fields.DateTimeField())
 
 
+def validate_input(r):
+    try:
+        int(r["patient_id"])
+        if type(r["patient_id"]) is not int:
+            print("Invalid input: 'patient_id' must be an integer.")
+            return False
+    except:
+        print("No input provided for 'patient_id'. Please input information.")
+        return False
+    try:
+        if type(r["attending_email"]) is not str:
+            print("Invalid input: 'attending_email' input must be a string.")
+            return False
+    except:
+        print("No input provided for 'attending_email'. "
+              "Please input information.")
+        return False
+    try:
+        int(r["user_age"])
+        if type(r["user_age"]) is not int:
+            print("Invalid input: 'user_age' must be an integer. "
+                  "Server cannot be used for patients less than a year.")
+            return False
+    except:
+        print("No input provided for 'user_age'. Please input information.")
+        return False
+    try:
+        float(r["heart_rate"])
+        if type(r["heart_rate"]) is not float:
+            print("Invalid input: 'heart_rate' must be an float.")
+            return False
+    except:
+        print("No input provided for 'heart rate'. Please input information.")
+        return False
+    print("Valid input")
+    return True
+
+
 def append_hr(patient_id, hr, time):
     user = User.objects.raw({"_id": patient_id}).first()
     user.heart_rate.append(hr)
@@ -93,32 +131,40 @@ def test():
 @app.route("/api/new_patient", methods=["POST"])
 def new_patient():
     r = request.get_json()
-    pat_id = r["patient_id"]
-    email = r["attending_email"]
-    age = r["user_age"]
-    hr = r["heart_rate"]
-    time = datetime.now()
-    new_user(pat_id, email, age, hr, time)
-    print("New patient, responses recorded")
-    return jsonify(pat_id, email, age)
+    good = validate_input(r)
+    if good is True:
+        pat_id = r["patient_id"]
+        email = r["attending_email"]
+        age = r["user_age"]
+        hr = r["heart_rate"]
+        time = datetime.now()
+        new_user(pat_id, email, age, hr, time)
+        print("New patient, responses recorded")
+        return jsonify(pat_id, email, age)
+    else:
+        return "Invalid input."
 
 
 @app.route("/api/heart_rate", methods=["POST"])
 def heart_rate():
     r = request.get_json()
-    pat_id = r["patient_id"]
-    email = r["attending_email"]
-    age = r["user_age"]
-    hr = r["heart_rate"]
-    time = datetime.now()
-    try:
-        append_hr(pat_id, hr, time)
-        print("Patient exists, responses recorded")
-        return jsonify(pat_id, hr)
-    except:
-        new_user(pat_id, email, age, hr, time)
-        print("Patient did not exist, a new patient was created")
-        return jsonify(pat_id, hr)
+    good = validate_input(r)
+    if good is True:
+        pat_id = r["patient_id"]
+        email = r["attending_email"]
+        age = r["user_age"]
+        hr = r["heart_rate"]
+        time = datetime.now()
+        try:
+            append_hr(pat_id, hr, time)
+            print("Patient exists, responses recorded")
+            return jsonify(pat_id, hr)
+        except:
+            new_user(pat_id, email, age, hr, time)
+            print("Patient did not exist, a new patient was created")
+            return jsonify(pat_id, hr)
+    else:
+        return "Invalid input."
 
 
 @app.route("/api/status/<patient_id>", methods=["GET"])
@@ -168,5 +214,3 @@ def average_over_interval():
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5001)
-
-

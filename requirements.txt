@@ -5,3 +5,5 @@ gunicorn
 pymodm
 requests
 numpy
+pytest-cov
+pytest-pep8
