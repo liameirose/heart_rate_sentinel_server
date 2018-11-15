@@ -3,10 +3,10 @@ import requests
 
 def post_patient():
     r = requests.post("http://127.0.0.1:5001/api/new_patient", json={
-                        "patient_id": 2,
-                        "attending_email": "liameirose@meirose.com",
-                        "user_age": 24,
-                        "heart_rate": 82.0
+                        "patient_id": 6,
+                        "attending_email": "liacmeirose@gmail.com",
+                        "user_age": 2,
+                        "heart_rate": 155.0
                         })
     patient_result = r.json()
 

@@ -3,7 +3,9 @@ from pymodm import MongoModel, fields
 from flask import Flask, jsonify, request
 from datetime import datetime
 import numpy as np
-
+import sendgrid
+import os
+from sendgrid.helpers.mail import *
 
 connect("mongodb://liameirose:sharoniscool8@ds037283.mlab.com:37283/bme590")
 app = Flask(__name__)
@@ -18,6 +20,15 @@ class User(MongoModel):
 
 
 def validate_input(r):
+    """
+    Function returns a boolean showing whether the user input
+    is complete and in the correct form.
+
+    Args:
+        r: json dictionary input
+    Returns:
+        boolean: states whether user input is valid or not.
+    """
     try:
         int(r["patient_id"])
         if type(r["patient_id"]) is not int:
@@ -37,7 +48,7 @@ def validate_input(r):
     try:
         int(r["user_age"])
         if type(r["user_age"]) is not int:
-            print("Invalid input: 'user_age' must be an integer. "
+            print("Invalid input: 'user_age' must be an integer."
                   "Server cannot be used for patients less than a year.")
             return False
     except:
@@ -56,6 +67,16 @@ def validate_input(r):
 
 
 def append_hr(patient_id, hr, time):
+    """
+    Function appends additional heart rates to an existing patient.
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+        hr: heart rate of patient
+        time: dat and time when heart rate is input into the server
+    Returns:
+        Saves new heart rate information to existing patient.
+    """
     user = User.objects.raw({"_id": patient_id}).first()
     user.heart_rate.append(hr)
     user.hr_times.append(time)
@@ -63,6 +84,18 @@ def append_hr(patient_id, hr, time):
 
 
 def new_user(patient_id, email, user_age, hr, time):
+    """
+    Function creates a new patient with given information.
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+        email: the email of the patient's attending physician
+        user_age: age of the patient
+        hr: heart rate of patient
+        time: dat and time when heart rate is input into the server
+    Returns:
+        Saves new heart rate information to a new user.
+    """
     u = User(patient_id, user_age, email, [], [])
     u.heart_rate.append(hr)
     u.hr_times.append(time)
@@ -70,26 +103,67 @@ def new_user(patient_id, email, user_age, hr, time):
 
 
 def give_hr(patient_id):
+    """
+    Function returns heart rate values for a given patient.
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+    Returns:
+        Heart rate values from patient
+    """
     u = User.objects.raw({"_id": patient_id}).first()
     return u.heart_rate
 
 
 def give_age(patient_id):
+    """
+    Function returns the age for a given patient.
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+    Returns:
+        Age of a patient
+    """
     u = User.objects.raw({"_id": patient_id}).first()
     return u.user_age
 
 
 def give_time(patient_id):
+    """
+    Function returns the list of times corresponding to certain heart rates.
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+    Returns:
+        List of heart rate times
+    """
     u = User.objects.raw({"_id": patient_id}).first()
     return u.hr_times
 
 
 def give_avg(hr_list):
+    """
+    Function returns the average heart rate for a given patient.
+
+    Args:
+        hr_list: list of heart rate values
+    Returns:
+        avg: average heart rate of patient
+    """
     avg = np.mean(hr_list)
     return avg
 
 
 def avg_interval(patient_id, interval):
+    """
+    Function returns the average over a user given interval.
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+        interval: date and time from which the average will be calculated
+    Returns:
+        avg_from: average heart rate of patient from given time interval
+    """
     try:
         time_from = datetime.strptime(interval, "%Y-%m-%d %H:%M:%S.%f")
     except ValueError:
@@ -107,6 +181,15 @@ def avg_interval(patient_id, interval):
 
 
 def tachy(user_age, heart_rate):
+    """
+    Function states if the patient is tachycardic.
+
+    Args:
+        user_age: age of certain patient
+        heart_rate: latest heart rate of patient
+    Returns:
+        Statement which indicated whether the patient is tachycardic or not.
+    """
     if user_age >= 1 and user_age <= 2 and heart_rate > 151:
         return "Tachycardia detected."
     elif user_age >= 3 and user_age <= 4 and heart_rate > 137:
@@ -123,6 +206,19 @@ def tachy(user_age, heart_rate):
         return 'No tachycardia detected.'
 
 
+def send_email(attending_email, patient_id):
+    sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
+    from_email = Email("lia.meirose@duke.edu")
+    to_email = Email(attending_email)
+    subject = "Patient is tachycardic"
+    content = Content("text/plain", "Patient " + str(patient_id) + " is tachycardic")
+    mail = Mail(from_email, subject, to_email, content)
+    response = sg.client.mail.send.post(request_body=mail.get())
+    print(response.status_code)
+    print(response.body)
+    print(response.headers)
+    return "Email sent."
+
 @app.route("/test", methods=["GET"])
 def test():
     return "Hello, this is a test"
@@ -138,7 +234,10 @@ def new_patient():
         age = r["user_age"]
         hr = r["heart_rate"]
         time = datetime.now()
+        oh_no = tachy(age, hr)
         new_user(pat_id, email, age, hr, time)
+        if oh_no == "Tachycardia  detected.":
+            send_email(email, pat_id)
         print("New patient, responses recorded")
         return jsonify(pat_id, email, age)
     else:
@@ -154,13 +253,18 @@ def heart_rate():
         email = r["attending_email"]
         age = r["user_age"]
         hr = r["heart_rate"]
+        oh_no = tachy(age, hr)
         time = datetime.now()
         try:
             append_hr(pat_id, hr, time)
+            if oh_no == "Tachycardia  detected.":
+                send_email(email, pat_id)
             print("Patient exists, responses recorded")
             return jsonify(pat_id, hr)
         except:
             new_user(pat_id, email, age, hr, time)
+            if oh_no == "Tachycardia  detected.":
+                send_email(email, pat_id)
             print("Patient did not exist, a new patient was created")
             return jsonify(pat_id, hr)
     else:

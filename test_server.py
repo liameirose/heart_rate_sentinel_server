@@ -1,4 +1,4 @@
-from hr_sentinel_server import validate_input, give_avg, tachy
+from hr_sentinel_server import validate_input, give_avg, tachy, send_email
 
 
 def test_validate_input():
@@ -56,3 +56,10 @@ def test_tachy():
     fake_hr2 = 100
     tach2 = tachy(fake_age2, fake_hr2)
     assert tach2 == "No tachycardia detected."
+
+
+def test_send_email():
+    fake_email = "liacmeirose@gmail.com"
+    pat_id = 88
+    result = send_email(fake_email, pat_id)
+    assert result == "Email sent."
