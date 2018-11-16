@@ -10,6 +10,7 @@ from sendgrid.helpers.mail import *
 connect("mongodb://liameirose:sharoniscool8@ds037283.mlab.com:37283/bme590")
 app = Flask(__name__)
 
+
 class User(MongoModel):
     patient_id = fields.IntegerField(primary_key=True)
     user_age = fields.IntegerField()
@@ -198,19 +199,19 @@ def tachy(user_age, heart_rate):
         Statement which indicated whether the patient is tachycardic or not.
     """
     if user_age >= 1 and user_age <= 2 and heart_rate > 151:
-        return "Tachycardia detected."
+        return True
     elif user_age >= 3 and user_age <= 4 and heart_rate > 137:
-        return "Tachycardia  detected."
+        return True
     elif user_age >= 5 and user_age <= 7 and heart_rate > 133:
-        return "Tachycardia detected."
+        return True
     elif user_age >= 8 and user_age <= 11 and heart_rate > 130:
-        return "Tachycardia  detected."
+        return True
     elif user_age >= 12 and user_age <= 15 and heart_rate > 119:
-        return "Tachycardia  detected."
+        return True
     elif user_age >= 15 and heart_rate > 130:
-        return "Tachycardia  detected."
+        return True
     else:
-        return 'No tachycardia detected.'
+        return False
 
 
 def send_email(attending_email, id):
@@ -225,7 +226,7 @@ def send_email(attending_email, id):
         Statement stating the email was sent.
     """
     sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
-    from_email = Email("lia.meirose@duke.edu")
+    from_email = Email("liacmeirose@gmail.com")
     to_email = Email(attending_email)
     subject = "Patient is tachycardic"
     content = Content("text/plain", "Patient " + str(id) + " is tachycardic")
@@ -267,8 +268,9 @@ def new_patient():
         time = datetime.now()
         oh_no = tachy(age, hr)
         new_user(pat_id, email, age, hr, time)
-        if oh_no == "Tachycardia  detected.":
+        if oh_no is True:
             send_email(email, pat_id)
+            print("Tachycardic")
         print("New patient, responses recorded")
         return jsonify(pat_id, email, age)
     else:
@@ -295,10 +297,12 @@ def heart_rate():
         hr = r["heart_rate"]
         oh_no = tachy(age, hr)
         time = datetime.now()
+        print(oh_no)
+        if oh_no is True:
+            send_email(email, pat_id)
+            print("Tachycardic")
         try:
             append_hr(pat_id, hr, time)
-            if oh_no == "Tachycardia  detected.":
-                send_email(email, pat_id)
             print("Patient exists, responses recorded")
             return jsonify(pat_id, hr)
         except:
@@ -327,7 +331,10 @@ def status(patient_id):
     hr = give_hr(patient_id)[-1]
     time = give_time(patient_id)[-1]
     try:
-        return jsonify(tachy(age, hr), time)
+        output = tachy(age, hr)
+        if output == True:
+            msg = "Patient is tachycardic"
+            return jsonify(msg, time)
     except:
         return "Patient information does not exist"
 
