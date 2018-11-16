@@ -10,7 +10,6 @@ from sendgrid.helpers.mail import *
 connect("mongodb://liameirose:sharoniscool8@ds037283.mlab.com:37283/bme590")
 app = Flask(__name__)
 
-
 class User(MongoModel):
     patient_id = fields.IntegerField(primary_key=True)
     user_age = fields.IntegerField()
@@ -395,4 +394,4 @@ def average_over_interval():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5002)
