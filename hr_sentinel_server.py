@@ -332,8 +332,12 @@ def status(patient_id):
     time = give_time(patient_id)[-1]
     try:
         output = tachy(age, hr)
-        if output == True:
+        print(output)
+        if output is True:
             msg = "Patient is tachycardic"
+            return jsonify(msg, time)
+        else:
+            msg = "Patient is not tachycardic"
             return jsonify(msg, time)
     except:
         return "Patient information does not exist"
@@ -401,4 +405,4 @@ def average_over_interval():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5008)
+    app.run(host="127.0.0.1", port=5008)
