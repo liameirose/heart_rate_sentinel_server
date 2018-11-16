@@ -9,7 +9,7 @@ is stored in a Mongo database.
 **TO RUN:**
 The server should be running on the virtual machine under the hostname:
 vcm-7293.vm.duke.edu. In order to POST to the server, run post_patient.py.
-To check the GET function of the server, type in the website and appropriate 
+To check the GET function of the server, type in the website (http://vcm-7293.vm.duke.edu:5008) and appropriate 
 extensions.
 
 
