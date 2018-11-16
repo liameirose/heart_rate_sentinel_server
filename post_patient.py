@@ -2,7 +2,7 @@ import requests
 
 
 def post_new_patient():
-    r = requests.post("http://vcm-7293.vm.duke.edu:5002/api/new_patient", json={
+    r = requests.post("http://vcm-7293.vm.duke.edu:5003/api/new_patient", json={
                         "patient_id": 99,
                         "attending_email": "liacmeirose@gmail.com",
                         "user_age": 2,
@@ -12,7 +12,7 @@ def post_new_patient():
 
 
 def post_hr():
-    r = requests.post("http://vcm-7293.vm.duke.edu::5002/api/heart_rate", json={
+    r = requests.post("http://vcm-7293.vm.duke.edu:5003/api/heart_rate", json={
                         "patient_id": 98,
                         "attending_email": "liacmeirose@gmail.com",
                         "user_age": 2,
@@ -22,7 +22,7 @@ def post_hr():
 
 
 def post_interval():
-    r = requests.post("http://vcm-7293.vm.duke.edu:5002/api/heart_rate/interval_average",
+    r = requests.post("http://vcm-7293.vm.duke.edu:5003/api/heart_rate/interval_average",
                       json={
                             "patient_id": 1,
                             "interval": "2018-03-09 11:00:36.372339"
