@@ -1,4 +1,6 @@
-from hr_sentinel_server import validate_input, give_avg, tachy, send_email
+from hr_sentinel_server import validate_input, give_avg
+from hr_sentinel_server import tachy, send_email, avg_interval
+from datetime import datetime
 
 
 def test_validate_input():
@@ -63,3 +65,15 @@ def test_send_email():
     pat_id = 88
     result = send_email(fake_email, pat_id)
     assert result == "Email sent."
+
+
+def test_avg_interval():
+    fake_times = ["2018-07-09 11:00:36.372339",
+                  "2018-06-09 11:00:36.372339",
+                  "2018-05-09 11:00:36.372339",
+                  "2018-04-09 11:00:36.372339"]
+    new = [datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f')for x in fake_times]
+    fake_hr = [1, 2, 3, 4]
+    fake_interval = "2018-03-09 11:00:36.372339"
+    result = avg_interval(fake_hr, new, fake_interval)
+    assert result == 2.5

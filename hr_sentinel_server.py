@@ -26,6 +26,7 @@ def validate_input(r):
 
     Args:
         r: json dictionary input
+
     Returns:
         boolean: states whether user input is valid or not.
     """
@@ -73,7 +74,8 @@ def append_hr(patient_id, hr, time):
     Args:
         patient_id: integer corresponding to a certain patient
         hr: heart rate of patient
-        time: dat and time when heart rate is input into the server
+        time: date and time when heart rate is input into the server
+
     Returns:
         Saves new heart rate information to existing patient.
     """
@@ -93,6 +95,7 @@ def new_user(patient_id, email, user_age, hr, time):
         user_age: age of the patient
         hr: heart rate of patient
         time: dat and time when heart rate is input into the server
+
     Returns:
         Saves new heart rate information to a new user.
     """
@@ -108,6 +111,7 @@ def give_hr(patient_id):
 
     Args:
         patient_id: integer corresponding to a certain patient
+
     Returns:
         Heart rate values from patient
     """
@@ -121,6 +125,7 @@ def give_age(patient_id):
 
     Args:
         patient_id: integer corresponding to a certain patient
+
     Returns:
         Age of a patient
     """
@@ -134,6 +139,7 @@ def give_time(patient_id):
 
     Args:
         patient_id: integer corresponding to a certain patient
+
     Returns:
         List of heart rate times
     """
@@ -147,6 +153,7 @@ def give_avg(hr_list):
 
     Args:
         hr_list: list of heart rate values
+
     Returns:
         avg: average heart rate of patient
     """
@@ -154,13 +161,15 @@ def give_avg(hr_list):
     return avg
 
 
-def avg_interval(patient_id, interval):
+def avg_interval(hr, times, interval):
     """
     Function returns the average over a user given interval.
 
     Args:
-        patient_id: integer corresponding to a certain patient
+        hr: list of heart rates of patient
+        times: list of times from patient
         interval: date and time from which the average will be calculated
+
     Returns:
         avg_from: average heart rate of patient from given time interval
     """
@@ -168,8 +177,6 @@ def avg_interval(patient_id, interval):
         time_from = datetime.strptime(interval, "%Y-%m-%d %H:%M:%S.%f")
     except ValueError:
         return "Time interval is not in the right format. Please try again."
-    hr = give_hr(patient_id)
-    times = give_time(patient_id)
 
     hr_from = []
 
@@ -187,6 +194,7 @@ def tachy(user_age, heart_rate):
     Args:
         user_age: age of certain patient
         heart_rate: latest heart rate of patient
+
     Returns:
         Statement which indicated whether the patient is tachycardic or not.
     """
@@ -206,12 +214,22 @@ def tachy(user_age, heart_rate):
         return 'No tachycardia detected.'
 
 
-def send_email(attending_email, patient_id):
+def send_email(attending_email, id):
+    """
+    Function sends an email and returns a confirmation statement.
+
+    Args:
+        attending_email: email of patient's attending
+        id: id corresponding to a certain patient
+
+    Returns:
+        Statement stating the email was sent.
+    """
     sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
     from_email = Email("lia.meirose@duke.edu")
     to_email = Email(attending_email)
     subject = "Patient is tachycardic"
-    content = Content("text/plain", "Patient " + str(patient_id) + " is tachycardic")
+    content = Content("text/plain", "Patient " + str(id) + " is tachycardic")
     mail = Mail(from_email, subject, to_email, content)
     response = sg.client.mail.send.post(request_body=mail.get())
     print(response.status_code)
@@ -219,13 +237,27 @@ def send_email(attending_email, patient_id):
     print(response.headers)
     return "Email sent."
 
+
 @app.route("/test", methods=["GET"])
 def test():
+    """
+    Function to test working server
+
+    Returns:
+        Test statement.
+    """
     return "Hello, this is a test"
 
 
 @app.route("/api/new_patient", methods=["POST"])
 def new_patient():
+    """
+    Function posts a new patient to the web server.
+    If a patient is tachycardic, an email is sent.
+
+    Returns:
+        .json file containing new patient information
+    """
     r = request.get_json()
     good = validate_input(r)
     if good is True:
@@ -246,6 +278,15 @@ def new_patient():
 
 @app.route("/api/heart_rate", methods=["POST"])
 def heart_rate():
+    """
+    Function posts a new heart rate reading to a server.
+    It will either append it to an existing user or create
+    a new user.
+    If a patient is tachycardic, an email is sent.
+
+    Returns:
+        .json file containing the patient heart rate information
+    """
     r = request.get_json()
     good = validate_input(r)
     if good is True:
@@ -273,6 +314,15 @@ def heart_rate():
 
 @app.route("/api/status/<patient_id>", methods=["GET"])
 def status(patient_id):
+    """
+    Function gets the status of a certain patient
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+
+    Returns:
+        .json file stating if the patient has tachycardia
+    """
     patient_id = int(patient_id)
     age = give_age(patient_id)
     hr = give_hr(patient_id)[-1]
@@ -285,6 +335,15 @@ def status(patient_id):
 
 @app.route("/api/heart_rate/<patient_id>", methods=["GET"])
 def all_hr(patient_id):
+    """
+    Function gets the heart rate list of a certain patient
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+
+    Returns:
+        .json file of all of the patient heart rates
+    """
     patient_id = int(patient_id)
     hr = give_hr(patient_id)
     try:
@@ -295,6 +354,15 @@ def all_hr(patient_id):
 
 @app.route("/api/heart_rate/average/<patient_id>", methods=["GET"])
 def find_avg(patient_id):
+    """
+    Function gets the average heart rate of a certain patient
+
+    Args:
+        patient_id: integer corresponding to a certain patient
+
+    Returns:
+        .json file of the average heart rate
+    """
     patient_id = int(patient_id)
     hr = give_hr(patient_id)
     try:
@@ -305,14 +373,24 @@ def find_avg(patient_id):
 
 @app.route("/api/heart_rate/interval_average", methods=["POST"])
 def average_over_interval():
+    """
+    Function posts the average heart rate from a certain interval.
+
+    Returns:
+        .json file containing average heart rate
+    """
     r = request.get_json()
     pat_id = r["patient_id"]
+    hr = give_hr(pat_id)
+    times = give_time(pat_id)
+
     interval = r["interval"]
     try:
-        result = avg_interval(pat_id, interval)
+        result = avg_interval(hr, times, interval)
         print(result)
         return jsonify(result)
-    except:
+    except Exception as inst:
+        print(inst)
         return "Patient information does not exist."
 
 
