@@ -1,5 +1,5 @@
 from hr_sentinel_server import validate_input, give_avg
-from hr_sentinel_server import tachy, send_email, avg_interval
+from hr_sentinel_server import tachy, avg_interval
 from datetime import datetime
 
 
@@ -52,19 +52,12 @@ def test_tachy():
     fake_age1 = 2
     fake_hr1 = 155
     tach1 = tachy(fake_age1, fake_hr1)
-    assert tach1 == "Tachycardia detected."
+    assert tach1 is True
 
     fake_age2 = 50
     fake_hr2 = 100
     tach2 = tachy(fake_age2, fake_hr2)
-    assert tach2 == "No tachycardia detected."
-
-
-def test_send_email():
-    fake_email = "liacmeirose@gmail.com"
-    pat_id = 88
-    result = send_email(fake_email, pat_id)
-    assert result == "Email sent."
+    assert tach2 is False
 
 
 def test_avg_interval():
