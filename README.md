@@ -16,7 +16,7 @@ extensions.
 **TEST FUNCTIONS:**
 Test functions have been written for functions which either do not depend
 on the use of the database or uses a GET or POST function. This leads
-to poor coverage. 
+to bad coverage. 
 
 
 **FUTURE IMPROVEMENTS:**
