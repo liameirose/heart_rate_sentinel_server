@@ -60,11 +60,11 @@ def test_tachy():
     assert tach2 == "No tachycardia detected."
 
 
-def test_send_email():
-    fake_email = "liacmeirose@gmail.com"
-    pat_id = 88
-    result = send_email(fake_email, pat_id)
-    assert result == "Email sent."
+# def test_send_email():
+#     fake_email = "liacmeirose@gmail.com"
+#     pat_id = 88
+#     result = send_email(fake_email, pat_id)
+#     assert result == "Email sent."
 
 
 def test_avg_interval():
